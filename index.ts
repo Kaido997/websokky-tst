@@ -1,4 +1,7 @@
 const uniqueID = "super-unique-id";
+const cursor = 0;
+const questionArray = [];
+const answers = [];
 
 function renderMessage(message: string, type: 'local' | 'remote') {
     const classType = type === 'local' ? 'class="localMessage"' : 'class="remoteMessage"'
@@ -31,6 +34,11 @@ const server = Bun.serve({
     },
     websocket: {
         message(ws, message) {
+            // go back functionality delete last answer and cursor--;
+            // render questionArray[cursor] question and answers client can choose
+            // last qquestion flag the db object by conversation CLOSED
+            // ask for email
+            // render result
             try {
                 const parseMessage = typeof message === "string" ? JSON.parse(message) : message;
 
@@ -39,9 +47,9 @@ const server = Bun.serve({
                 }
                 ws.send(renderMessage(parseMessage.message == 'true' ? 'si': 'no', 'local'))
                 if (parseMessage.message == "true") {
-                    server.publish(uniqueID, renderMessage("Ottimo allora sarà molto piu semplice aiutari", 'remote'))
+                    ws.send(renderMessage("Ottimo allora sarà molto piu semplice aiutari", 'remote'))
                 } else {
-                    server.publish(uniqueID, renderMessage("Non preoccuparti sarai guidato passo passo", "remote"))
+                    ws.send(renderMessage("Non preoccuparti sarai guidato passo passo", "remote"))
                 }
             } catch (err) {
                 console.log(err);
@@ -49,12 +57,20 @@ const server = Bun.serve({
         },
         open(ws) {
             // init conversation
+            // search for conversation in db by email
+            // if no conversation init
+            // else get conversation cursor
+            // resume conversation
+            let id = 1;
+            uniqueID.concat(id.toString());
+            id++
             ws.subscribe(uniqueID); // subscribe to a unique topic name so the connection ramain private
-            server.publish(uniqueID, renderMessage('intro message 1', 'remote'));
-            server.publish(uniqueID, renderMessage('intro message 2', 'remote'))
-            server.publish(uniqueID, renderMessage('intro message 3', 'remote'))
+            ws.send(renderMessage('intro message 1', 'remote'));
+            ws.send(renderMessage('intro message 2', 'remote'))
+            ws.send(renderMessage('intro message 3', 'remote'))
         },
         close(ws, code, message) {
+            //on close save the conversation cursor 
             handleClose(code, message)
         }
     }
